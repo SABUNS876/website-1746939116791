@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Tic Tac Toe PvP & Bot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    font-family: 'Montserrat', sans-serif;
+    color: #f0f0f0;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+  #game-container {
+    background: #22223bcc;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+  }
+  h1 {
+    font-weight: 700;
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 15px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #ffd166;
+    text-shadow: 0 0 8px #ffd166cc;
+  }
+  #mode-select {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+  }
+  #mode-select button {
+    background: #4a4e69;
+    border: none;
+    color: #f0f0f0;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 18px;
+    margin: 0 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.25s ease;
+    flex-grow: 1;
+    max-width: 120px;
+  }
+  #mode-select button.active, #mode-select button:hover {
+    background: #f2a365;
+    color: #22223b;
+    box-shadow: 0 0 12px #f2a365aa;
+  }
+
+  #opponent-select {
+    background: #4a4e69;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+  }
+  #opponent-select:focus {
+    outline: 3px solid #ffd166;
+  }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 8px;
+  }
+  .cell {
+    background: #9a8c98;
+    border-radius: 12px;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: 700;
+    color: #22223b;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s ease;
+    box-shadow: inset 0 0 5px #4a4e69aa;
+  }
+  .cell:hover {
+    background: #f2a365cc;
+    color: #22223b;
+    box-shadow: 0 0 20px #f2a365cc;
+  }
+  .cell.disabled {
+    cursor: default;
+    background: #22223b;
+    color: #f0f0f0;
+    box-shadow: none;
+  }
+
+  #status {
+    margin-top: 15px;
+    font-size: 18px;
+    text-align: center;
+    min-height: 24px;
+    font-weight: 600;
+    user-select: none;
+  }
+  #restart-btn {
+    background: #f2a365;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 20px;
+    font-weight: 700;
+    color: #22223b;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px #f2a365aa;
+    transition: background 0.3s ease;
+  }
+  #restart-btn:hover {
+    background: #ffd166;
+    box-shadow: 0 0 25px #ffd166bb;
+  }
+
+  @media (max-width: 400px) {
+    #game-container {
+      padding: 15px;
+    }
+    .cell {
+      font-size: 36px;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="game-container" role="main" aria-label="Tic Tac Toe Game">
+  <h1>Tic Tac Toe</h1>
+  <div id="mode-select" role="radiogroup" aria-label="Select Game Mode">
+    <button id="btn-pvp" class="active" role="radio" aria-checked="true" tabindex="0">PvP</button>
+    <button id="btn-pvb" role="radio" aria-checked="false" tabindex="-1">Play vs Bot</button>
+  </div>
+  <select id="opponent-select" aria-label="Select Bot Difficulty" hidden>
+    <option value="easy">Bot: Easy</option>
+    <option value="medium" selected>Bot: Medium</option>
+    <option value="hard">Bot: Hard</option>
+  </select>
+  <div id="board" role="grid" aria-live="polite" aria-label="Tic Tac Toe Board">
+    <button class="cell" role="gridcell" aria-label="Row 1 Column 1" tabindex="0"></button>
+    <button class="cell" role="gridcell" aria-label="Row 1 Column 2" tabindex="-1"></button>
+    <button class="cell" role="gridcell" aria-label="Row 1 Column 3" tabindex="-1"></button>
+    <button class="cell" role="gridcell" aria-label="Row 2 Column 1" tabindex="-1"></button>
+    <button class="cell" role="gridcell" aria-label="Row 2 Column 2" tabindex="-1"></button>
+    <button class="cell" role="gridcell" aria-label="Row 2 Column 3" tabindex="-1"></button>
+    <button class="cell" role="gridcell" aria-label="Row 3 Column 1" tabindex="-1"></button>
+    <button class="cell" role="gridcell" aria-label="Row 3 Column 2" tabindex="-1"></button>
+    <button class="cell" role="gridcell" aria-label="Row 3 Column 3" tabindex="-1"></button>
+  </div>
+  <div id="status" aria-live="polite" aria-atomic="true"></div>
+  <button id="restart-btn" aria-label="Restart Game">Restart</button>
+</div>
+
+<script>
+(() => {
+  const board = document.getElementById('board');
+  const cells = Array.from(board.children);
+  const status = document.getElementById('status');
+  const restartBtn = document.getElementById('restart-btn');
+  const btnPvp = document.getElementById('btn-pvp');
+  const btnPvb = document.getElementById('btn-pvb');
+  const opponentSelect = document.getElementById('opponent-select');
+
+  let boardState = Array(9).fill(null); 
+  let currentPlayer = 'X'; 
+  let gameActive = true; 
+  let mode = 'pvp'; // 'pvp' or 'pvb'
+  let botDifficulty = 'medium';
+
+  // Winning indices sets
+  const winningCombos = [
+    [0,1,2],[3,4,5],[6,7,8], // rows
+    [0,3,6],[1,4,7],[2,5,8], // cols
+    [0,4,8],[2,4,6]          // diagonals
+  ];
+
+  // Accessibility helper: Set tabindex properly so only current cell is focusable
+  function updateTabIndexes(index) {
+    cells.forEach((cell,i) => {
+      cell.tabIndex = i === index ? 0 : -1;
+    });
+    cells[index].focus();
+  }
+
+  // Check for win or draw
+  function checkWinner(board, player){
+    return winningCombos.some(combo => combo.every(i => board[i]===player));
+  }
+
+  function checkDraw(board){
+    return board.every(cell => cell !== null);
+  }
+
+  // Display status message
+  function updateStatus(text) {
+    status.textContent = text;
+  }
+
+  // Disable all cells - used when game finished
+  function disableAllCells() {
+    cells.forEach(cell => cell.classList.add('disabled'));
+  }
+
+  // Enable all free cells
+  function enableFreeCells() {
+    cells.forEach((cell,i) => {
+      if(!boardState[i]) cell.classList.remove('disabled');
+    });
+  }
+  
+  // Bot moves
+  function botMove() {
+    if (!gameActive) return;
+
+    let moveIndex;
+    if(botDifficulty === 'easy') {
+      moveIndex = randomMove();
+    } else if(botDifficulty === 'medium') {
+      moveIndex = mediumMove();
+    } else {
+      moveIndex = hardMove();
+    }
+    makeMove(moveIndex, 'O');
+  }
+
+  // Easy bot - random available
+  function randomMove() {
+    let available = boardState.reduce((acc, val, idx) => val === null ? acc.concat(idx) : acc, []);
+    return available[Math.floor(Math.random() * available.length)];
+  }
+
+  // Medium bot - tries to win, blocks, else random
+  function mediumMove() {
+    // 1. Win if possible
+    for(let i=0; i<9; i++) {
+      if(boardState[i] === null) {
+        boardState[i] = 'O';
+        if(checkWinner(boardState, 'O')) {
+          boardState[i] = null;
+          return i;
+        }
+        boardState[i] = null;
+      }
+    }
+    // 2. Block X win
+    for(let i=0; i<9; i++) {
+      if(boardState[i] === null) {
+        boardState[i] = 'X';
+        if(checkWinner(boardState, 'X')) {
+          boardState[i] = null;
+          return i;
+        }
+        boardState[i] = null;
+      }
+    }
+    // 3. Else random
+    return randomMove();
+  }
+
+  // Hard bot - Minimax algorithm implementation
+  function hardMove() {
+    let bestScore = -Infinity;
+    let bestMove = null;
+    for (let i = 0; i < 9; i++) {
+      if (boardState[i] === null) {
+        boardState[i] = 'O';
+        let score = minimax(boardState, 0, false);
+        boardState[i] = null;
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = i;
+        }
+      }
+    }
+    return bestMove;
+  }
+
+  function minimax(board, depth, isMaximizing) {
+    if (checkWinner(board, 'O')) return 10 - depth;
+    if (checkWinner(board, 'X')) return depth - 10;
+    if (checkDraw(board)) return 0;
+
+    if (isMaximizing) {
+      let maxEval = -Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === null) {
+          board[i] = 'O';
+          let evalScore = minimax(board, depth + 1, false);
+          board[i] = null;
+          maxEval = Math.max(maxEval, evalScore);
+        }
+      }
+      return maxEval;
+    } else {
+      let minEval = Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === null) {
+          board[i] = 'X';
+          let evalScore = minimax(board, depth + 1, true);
+          board[i] = null;
+          minEval = Math.min(minEval, evalScore);
+        }
+      }
+      return minEval;
+    }
+  }
+
+  // Make a move in the game, mark board and UI
+  function makeMove(index, player) {
+    if(boardState[index] || !gameActive) return false;
+    boardState[index] = player;
+    cells[index].textContent = player;
+    cells[index].classList.add('disabled');
+
+    if(checkWinner(boardState, player)) {
+      gameActive = false;
+      updateStatus(`Player ${player} wins!`);
+      disableAllCells();
+      return true;
+    }
+    if(checkDraw(boardState)) {
+      gameActive = false;
+      updateStatus(`It's a draw!`);
+      disableAllCells();
+      return true;
+    }
+    currentPlayer = (player === 'X') ? 'O' : 'X';
+    updateStatus(`Player ${currentPlayer}'s turn`);
+
+    // PvB mode: if bot's turn, make bot move
+    if(mode === 'pvb' && currentPlayer === 'O' && gameActive) {
+      // Delay for a bit to simulate thinking
+      setTimeout(botMove, 400);
+    }
+    return true;
+  }
+
+  // Reset game state and UI
+  function resetGame() {
+    boardState.fill(null);
+    currentPlayer = 'X';
+    gameActive = true;
+    cells.forEach(cell => {
+      cell.textContent = '';
+      cell.classList.remove('disabled');
+    });
+    updateStatus(`Player ${currentPlayer}'s turn`);
+    updateTabIndexes(0);
+  }
+
+  // Handle cell click event
+  function cellClickHandler(event) {
+    const index = cells.indexOf(event.currentTarget);
+    if(index === -1 || !gameActive) return;
+    if(mode === 'pvp' || (mode === 'pvb' && currentPlayer === 'X')) {
+      if(makeMove(index, currentPlayer)) {
+        updateTabIndexes(findNextFocusableCell(index));
+      }
+    }
+  }
+
+  // Find next available cell to focus after current move
+  function findNextFocusableCell(currentIndex) {
+    for(let i=currentIndex+1; i<cells.length; i++) {
+      if(!boardState[i]) return i;
+    }
+    for(let i=0; i<currentIndex; i++) {
+      if(!boardState[i]) return i;
+    }
+    return currentIndex;
+  }
+
+  // Handle keyboard navigation on board (arrow keys)
+  function cellKeyDownHandler(event) {
+    const index = cells.indexOf(event.currentTarget);
+    if(index === -1) return;
+
+    // Prevent default page scroll on arrow keys
+    if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
+      event.preventDefault();
+    }
+
+    let row = Math.floor(index / 3);
+    let col = index % 3;
+    switch(event.key) {
+      case 'ArrowLeft':
+        col = (col + 2) % 3;
+        break;
+      case 'ArrowRight':
+        col = (col + 1) % 3;
+        break;
+      case 'ArrowUp':
+        row = (row + 2) % 3;
+        break;
+      case 'ArrowDown':
+        row = (row + 1) % 3;
+        break;
+      case 'Enter':
+      case ' ':
+        cells[index].click();
+        return;
+      default:
+        return;
+    }
+    let newIndex = row * 3 + col;
+    cells[newIndex].focus();
+    updateTabIndexes(newIndex);
+  }
+
+  // Update mode UI and reset game accordingly
+  function setMode(newMode) {
+    if (mode === newMode) return;
+    mode = newMode;
+    if(mode === 'pvb') {
+      btnPvb.classList.add('active');
+      btnPvb.setAttribute('aria-checked', 'true');
+      btnPvb.tabIndex = 0;
+      btnPvp.classList.remove('active');
+      btnPvp.setAttribute('aria-checked', 'false');
+      btnPvp.tabIndex = -1;
+      opponentSelect.hidden = false;
+    } else {
+      btnPvp.classList.add('active');
+      btnPvp.setAttribute('aria-checked', 'true');
+      btnPvp.tabIndex = 0;
+      btnPvb.classList.remove('active');
+      btnPvb.setAttribute('aria-checked', 'false');
+      btnPvb.tabIndex = -1;
+      opponentSelect.hidden = true;
+    }
+    resetGame();
+  }
+
+  // Event Listeners
+  cells.forEach(cell => {
+    cell.addEventListener('click', cellClickHandler);
+    cell.addEventListener('keydown', cellKeyDownHandler);
+  });
+  restartBtn.addEventListener('click', resetGame);
+
+  btnPvp.addEventListener('click', () => setMode('pvp'));
+  btnPvb.addEventListener('click', () => setMode('pvb'));
+
+  opponentSelect.addEventListener('change', (e) => {
+    botDifficulty = e.target.value;
+    if (mode === 'pvb') {
+      resetGame();
+    }
+  });
+
+  // Initialize
+  setMode('pvp');
+  updateStatus(`Player X's turn`);
+  updateTabIndexes(0);
+})();
+</script>
+</body>
+</html>
+
+```
